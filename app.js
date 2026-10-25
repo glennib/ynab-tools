@@ -4,6 +4,11 @@ import { Ynab, authorizeUrl, parseRedirect, toApiTransactions } from "./ynab.js"
 
 const $ = (id) => document.getElementById(id);
 
+const amountFormat = new Intl.NumberFormat("en-US", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
 // The token, and the last used plan and account, are kept in localStorage so they
 // survive closing the tab; the token is dropped once it expires. The OAuth state and
 // the converted file only need to survive the redirect, so they live in sessionStorage.
@@ -216,7 +221,7 @@ function render() {
         ["date", t.date],
         ["", t.payee],
         ["memo", t.memo],
-        [`amount ${t.amount < 0 ? "neg" : "pos"}`, t.amount.toFixed(2)],
+        [`amount ${t.amount < 0 ? "neg" : "pos"}`, amountFormat.format(t.amount)],
       ];
       for (const [cls, text] of cells) {
         const td = document.createElement("td");

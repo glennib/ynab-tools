@@ -1,4 +1,4 @@
-# ynab-tools
+# handynab
 
 A static web page that converts a Handelsbanken transaction export (CSV) into a CSV for
 [YNAB's file-based import](https://support.ynab.com/en_us/file-based-import-a-guide-Bkj4Sszyo.md).

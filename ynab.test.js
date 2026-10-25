@@ -42,6 +42,15 @@ test("maps transactions to milliunits with YNAB-style import ids", () => {
   assert.ok(txs.every((t) => t.import_id.length <= 36));
 });
 
+test("leaves out excluded transactions without renumbering the rest", () => {
+  const kiwi = { date: "2026-10-23", payee: "KIWI", memo: "", amount: -79.8 };
+  const txs = toApiTransactions([kiwi, { ...kiwi, excluded: true }, kiwi], "acc");
+  assert.deepEqual(
+    txs.map((t) => t.import_id),
+    ["YNAB:-79800:2026-10-23:1", "YNAB:-79800:2026-10-23:3"],
+  );
+});
+
 test("maps API transactions newest first, without deleted ones", () => {
   const base = { memo: null, cleared: "cleared", approved: true, import_id: null, deleted: false };
   const txs = fromApiTransactions([

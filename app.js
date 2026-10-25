@@ -196,7 +196,9 @@ async function loadRecent() {
   }
 
   const recent = fromApiTransactions(transactions);
-  const inFile = new Set(toApiTransactions(conversion.transactions, accountId).map((t) => t.import_id));
+  // Excluded rows are still in the file, so they are matched too.
+  const all = conversion.transactions.map(({ excluded, ...t }) => t);
+  const inFile = new Set(toApiTransactions(all, accountId).map((t) => t.import_id));
   const fromFile = recent.filter((t) => inFile.has(t.importId)).length;
   const account = $("account").selectedOptions[0].textContent;
   const parts = [`${recent.length} transactions in ${account} since ${since}`];
@@ -220,7 +222,7 @@ async function loadRecent() {
 
 function updateImportButton() {
   const button = $("import");
-  const count = conversion?.transactions.length ?? 0;
+  const count = conversion?.transactions.filter((t) => !t.excluded).length ?? 0;
   const account = $("account").selectedOptions[0];
   button.disabled = !ynab || !count || !account;
   button.textContent = account
@@ -267,11 +269,17 @@ async function handle(file) {
 }
 
 // The bank's own columns are shown after the ones that are imported, muted, to
-// help explain how a row was converted.
-function headerRow(columns, showSource) {
+// help explain how a row was converted. Selectable tables start with a checkbox
+// column for leaving rows out of the import.
+function headerRow(columns, showSource, selectable = false) {
   const tr = document.createElement("tr");
+  if (selectable) {
+    const th = Object.assign(document.createElement("th"), { className: "include" });
+    th.append(Object.assign(document.createElement("input"), { type: "checkbox", id: "include-all", title: "Include all" }));
+    tr.append(th);
+  }
   for (const name of ["Date", "Payee", "Memo", "Amount"]) {
-    tr.append(Object.assign(document.createElement("th"), { textContent: name }));
+    tr.append(Object.assign(document.createElement("th"), { className: name.toLowerCase(), textContent: name }));
   }
   if (showSource) {
     for (const name of columns) {
@@ -281,12 +289,24 @@ function headerRow(columns, showSource) {
   return tr;
 }
 
-function transactionRows(transactions, columns, showSource) {
-  return transactions.map((t) => {
+function transactionRows(transactions, columns, showSource, selectable = false) {
+  return transactions.map((t, index) => {
     const tr = document.createElement("tr");
+    if (selectable) {
+      tr.classList.toggle("excluded", Boolean(t.excluded));
+      const box = Object.assign(document.createElement("input"), {
+        type: "checkbox",
+        checked: !t.excluded,
+        title: "Include in import",
+      });
+      box.dataset.index = index;
+      const td = Object.assign(document.createElement("td"), { className: "include" });
+      td.append(box);
+      tr.append(td);
+    }
     const cells = [
       ["date", t.date],
-      ["", t.payee],
+      ["payee", t.payee],
       ["memo", t.memo],
       [`amount ${t.amount < 0 ? "neg" : "pos"}`, amountFormat.format(t.amount)],
     ];
@@ -302,16 +322,29 @@ function transactionRows(transactions, columns, showSource) {
   });
 }
 
-function render() {
-  const { columns, transactions, pending, ignored } = conversion;
-  const showSource = $("show-source").checked;
+/** Updates what depends on which transactions are excluded from the import. */
+function updateSelection() {
+  const { transactions, pending, ignored } = conversion;
+  const excluded = transactions.filter((t) => t.excluded).length;
   const parts = [`${transactions.length} transactions`];
+  if (excluded) parts.push(`${excluded} excluded`);
   if (pending.length) parts.push(`${pending.length} pending skipped`);
   if (ignored.length) parts.push(`${ignored.length} other rows skipped`);
   $("counts").textContent = parts.join(" · ");
 
-  $("head").replaceChildren(headerRow(columns, showSource));
-  $("rows").replaceChildren(...transactionRows(transactions, columns, showSource));
+  const all = $("include-all");
+  all.checked = excluded === 0;
+  all.indeterminate = excluded > 0 && excluded < transactions.length;
+  $("download").disabled = excluded === transactions.length;
+  updateImportButton();
+}
+
+function render() {
+  const { columns, transactions, pending, ignored } = conversion;
+  const showSource = $("show-source").checked;
+
+  $("head").replaceChildren(headerRow(columns, showSource, true));
+  $("rows").replaceChildren(...transactionRows(transactions, columns, showSource, true));
 
   $("pending").hidden = !pending.length;
   $("pending").querySelector("summary").textContent = `${pending.length} pending skipped`;
@@ -325,12 +358,12 @@ function render() {
   );
 
   $("result").hidden = false;
-  updateImportButton();
+  updateSelection();
   loadRecent();
 }
 
 function download() {
-  const csv = toYnabCsv(conversion.transactions);
+  const csv = toYnabCsv(conversion.transactions.filter((t) => !t.excluded));
   const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
   const name = conversion.name.replace(/\.csv$/i, "") + "-ynab.csv";
   Object.assign(document.createElement("a"), { href: url, download: name }).click();
@@ -360,6 +393,19 @@ $("account").addEventListener("change", () => {
   save(localStorage, KEYS.account, $("account").value);
   updateImportButton();
   loadRecent();
+});
+$("rows").addEventListener("change", (e) => {
+  const { index } = e.target.dataset;
+  if (index === undefined) return;
+  const transaction = conversion.transactions[index];
+  transaction.excluded = !e.target.checked;
+  e.target.closest("tr").classList.toggle("excluded", transaction.excluded);
+  updateSelection();
+});
+$("head").addEventListener("change", (e) => {
+  if (e.target.id !== "include-all") return;
+  for (const t of conversion.transactions) t.excluded = !e.target.checked;
+  render();
 });
 $("recent").open = Boolean(load(localStorage, KEYS.showRecent));
 $("recent").addEventListener("toggle", () => save(localStorage, KEYS.showRecent, $("recent").open));

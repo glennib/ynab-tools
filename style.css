@@ -44,13 +44,16 @@ td.date { white-space: nowrap; }
 td.memo { color: var(--muted); }
 td.flags { color: var(--muted); font-size: 0.8rem; white-space: nowrap; }
 #recent { margin-top: 1rem; }
+th.include, td.include { width: 1px; padding-right: 0; }
+.include input { margin: 0.2rem 0 0; cursor: pointer; }
+tr.excluded > :not(.include) { opacity: 0.4; }
 #show-source-label { margin-left: auto; color: var(--muted); font-size: 0.875rem;
                      display: flex; gap: 0.4rem; align-items: center; cursor: pointer; }
 th.source, td.source { color: var(--muted); font-size: 0.8rem; white-space: nowrap; opacity: 0.8; }
 @media (min-width: 641px) {
-  tr:has(.source) > :nth-child(2) { min-width: 10rem; }
-  tr:has(.source) > :nth-child(3) { min-width: 16rem; }
-  tr > .source:nth-child(5) { border-left: 1px solid var(--line); }
+  tr:has(.source) > .payee { min-width: 10rem; }
+  tr:has(.source) > .memo { min-width: 16rem; }
+  .amount + .source { border-left: 1px solid var(--line); }
 }
 details { margin-top: 1.25rem; }
 summary { cursor: pointer; color: var(--muted); }
@@ -71,7 +74,7 @@ details .note { color: var(--muted); font-size: 0.875rem; margin: 0.5rem 0; }
   td { border: 0; padding: 0; }
   td.date { color: var(--muted); grid-row: 1; grid-column: 1; }
   td.amount { grid-row: 1; grid-column: 2; }
-  td:nth-child(2) { grid-column: 1 / -1; font-weight: 500; }
+  td.payee { grid-column: 1 / -1; font-weight: 500; }
   td.memo { grid-column: 1 / -1; overflow-wrap: anywhere; }
   td.memo:empty { display: none; }
   td.source { grid-column: 1 / -1; font-size: 0.75rem; white-space: normal; overflow-wrap: anywhere; }
@@ -79,4 +82,11 @@ details .note { color: var(--muted); font-size: 0.875rem; margin: 0.5rem 0; }
   td.source:empty { display: none; }
   td.flags { grid-column: 1 / -1; white-space: normal; }
   td.flags:empty { display: none; }
+  /* Selectable cards keep the checkbox in its own column to the left of the card. */
+  tr:has(.include) { grid-template-columns: auto 1fr auto; }
+  tr:has(.include) > td { grid-column: 2 / -1; }
+  tr:has(.include) > td.include { grid-column: 1; grid-row: 1 / span 9; padding-right: 0.75rem; }
+  tr:has(.include) > td.date { grid-column: 2; }
+  tr:has(.include) > td.amount { grid-column: 3; }
+  .include input { width: 1.25rem; height: 1.25rem; }
 }

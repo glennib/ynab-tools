@@ -36,14 +36,17 @@ export function parseRedirect(hash, now = Date.now()) {
  * The import_id follows the format YNAB uses for file-based and direct import
  * ("YNAB:<milliunits>:<date>:<occurrence>"), so a transaction already imported
  * by any of those routes is reported as a duplicate instead of created twice.
+ * Transactions marked excluded are left out, but still count towards the
+ * occurrence, so the others keep the import_id they have in the full file.
  */
 export function toApiTransactions(transactions, accountId) {
   const occurrences = new Map();
-  return transactions.map((t) => {
+  return transactions.flatMap((t) => {
     const amount = Math.round(t.amount * 1000);
     const key = `${amount}:${t.date}`;
     const occurrence = (occurrences.get(key) ?? 0) + 1;
     occurrences.set(key, occurrence);
+    if (t.excluded) return [];
     return {
       account_id: accountId,
       date: t.date,

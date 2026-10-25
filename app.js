@@ -4,10 +4,20 @@ import { Ynab, authorizeUrl, fromApiTransactions, parseRedirect, toApiTransactio
 
 const $ = (id) => document.getElementById(id);
 
-const amountFormat = new Intl.NumberFormat("en-US", {
+const amountFormat = new Intl.NumberFormat("nb-NO", {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
+
+/** "2026-10-23" -> "23.10.2026", the way the bank shows dates. */
+function displayDate(iso) {
+  const [year, month, day] = iso.split("-");
+  return day ? `${day}.${month}.${year}` : iso;
+}
+
+function transactionCount(n) {
+  return `${n} ${n === 1 ? "transaksjon" : "transaksjoner"}`;
+}
 
 // The token, and the last used plan and account, are kept in localStorage so they
 // survive closing the tab; the token is dropped once it expires. The OAuth state and
@@ -57,7 +67,7 @@ function redirectUri() {
 
 function connect() {
   if (!YNAB_CLIENT_ID) {
-    showError("No YNAB client ID is configured for this site.");
+    showError("Denne siden har ingen YNAB-klient-ID.");
     return;
   }
   const state = crypto.randomUUID();
@@ -80,9 +90,9 @@ function restoreSession() {
     const expected = load(sessionStorage, KEYS.state);
     save(sessionStorage, KEYS.state, null);
     if (!expected || redirect.state !== expected) {
-      showError("The YNAB authorisation response did not match this session. Try connecting again.");
+      showError("Svaret fra YNAB hørte ikke til denne økten. Prøv å koble til på nytt.");
     } else if (redirect.error) {
-      showError(`YNAB authorisation failed: ${redirect.error}`);
+      showError(`Tilkoblingen til YNAB mislyktes: ${redirect.error}`);
     } else {
       save(localStorage, KEYS.token, { token: redirect.token, expiresAt: redirect.expiresAt });
     }
@@ -103,10 +113,10 @@ function renderAuth() {
   $("connect").hidden = Boolean(ynab);
   $("disconnect").hidden = !ynab;
   if (ynab) {
-    const until = new Date(expiresAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    $("auth-status").textContent = `Connected to YNAB until ${until}`;
+    const until = new Date(expiresAt).toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" });
+    $("auth-status").textContent = `Koblet til YNAB til kl. ${until}`;
   } else {
-    $("auth-status").textContent = "Not connected to YNAB";
+    $("auth-status").textContent = "Ikke koblet til YNAB";
   }
   $("ynab").hidden = !ynab;
   if (ynab) loadPlans();
@@ -119,7 +129,7 @@ async function call(fn) {
   try {
     return await fn();
   } catch (e) {
-    if (e.status === 401) disconnect("The YNAB session has expired. Connect again to continue.");
+    if (e.status === 401) disconnect("YNAB-tilkoblingen har utløpt. Koble til på nytt for å fortsette.");
     else showError(e.message);
     throw e;
   }
@@ -186,7 +196,7 @@ function seenTransactions() {
 function updateExcludeSeen() {
   const count = seenTransactions().length;
   $("exclude-seen").hidden = !count;
-  $("exclude-seen").textContent = `Exclude ${count} already in YNAB`;
+  $("exclude-seen").textContent = `Utelat ${count} som allerede er i YNAB`;
 }
 
 function excludeSeen() {
@@ -230,8 +240,8 @@ async function loadRecent() {
   const inFile = new Set(fileImportIds());
   const fromFile = recent.filter((t) => inFile.has(t.importId)).length;
   const account = $("account").selectedOptions[0].textContent;
-  const parts = [`${recent.length} transactions in ${account} since ${since}`];
-  if (fromFile) parts.push(`${fromFile} from this file`);
+  const parts = [`${transactionCount(recent.length)} i ${account} siden ${displayDate(since)}`];
+  if (fromFile) parts.push(`${fromFile} fra denne filen`);
   $("recent").querySelector("summary").textContent = parts.join(" · ");
 
   const head = headerRow([], false);
@@ -240,9 +250,9 @@ async function loadRecent() {
   const rows = transactionRows(recent, [], false);
   recent.forEach((t, i) => {
     const flags = [];
-    if (inFile.has(t.importId)) flags.push("in this file");
-    if (!t.approved) flags.push("unapproved");
-    if (t.cleared === "uncleared") flags.push("uncleared");
+    if (inFile.has(t.importId)) flags.push("i denne filen");
+    if (!t.approved) flags.push("ikke godkjent");
+    if (t.cleared === "uncleared") flags.push("ikke klarert");
     rows[i].append(Object.assign(document.createElement("td"), { className: "flags", textContent: flags.join(", ") }));
   });
   $("recent-rows").replaceChildren(...rows);
@@ -256,8 +266,8 @@ function updateImportButton() {
   button.hidden = !conversion;
   button.disabled = !ynab || !count || !account;
   button.textContent = account
-    ? `Import ${count} transactions into ${account.textContent}`
-    : "Import";
+    ? `Importer ${transactionCount(count)} til ${account.textContent}`
+    : "Importer";
 }
 
 async function importTransactions() {
@@ -268,13 +278,13 @@ async function importTransactions() {
   showError("");
   $("import").disabled = true;
   status.hidden = false;
-  status.textContent = "Importing…";
+  status.textContent = "Importerer…";
   try {
     const transactions = toApiTransactions(conversion.transactions, accountId);
     const { created, duplicates } = await call(() => ynab.createTransactions(planId, transactions));
-    const parts = [`${created} imported`];
-    if (duplicates) parts.push(`${duplicates} already in YNAB`);
-    status.textContent = `${parts.join(" · ")}. New transactions are unapproved for review in YNAB.`;
+    const parts = [`${created} importert`];
+    if (duplicates) parts.push(`${duplicates} fantes allerede i YNAB`);
+    status.textContent = `${parts.join(" · ")}. Nye transaksjoner er ikke godkjent, så du kan gå gjennom dem i YNAB.`;
     loadRecent();
   } catch {
     status.hidden = true;
@@ -306,11 +316,11 @@ function headerRow(columns, showSource, selectable = false) {
   const tr = document.createElement("tr");
   if (selectable) {
     const th = Object.assign(document.createElement("th"), { className: "include" });
-    th.append(Object.assign(document.createElement("input"), { type: "checkbox", id: "include-all", title: "Include all" }));
+    th.append(Object.assign(document.createElement("input"), { type: "checkbox", id: "include-all", title: "Ta med alle" }));
     tr.append(th);
   }
-  for (const name of ["Date", "Payee", "Memo", "Amount"]) {
-    tr.append(Object.assign(document.createElement("th"), { className: name.toLowerCase(), textContent: name }));
+  for (const [className, name] of [["date", "Dato"], ["payee", "Mottaker"], ["memo", "Notat"], ["amount", "Beløp"]]) {
+    tr.append(Object.assign(document.createElement("th"), { className, textContent: name }));
   }
   if (showSource) {
     for (const name of columns) {
@@ -328,7 +338,7 @@ function transactionRows(transactions, columns, showSource, selectable = false) 
       const box = Object.assign(document.createElement("input"), {
         type: "checkbox",
         checked: !t.excluded,
-        title: "Include in import",
+        title: "Ta med i importen",
       });
       box.dataset.index = index;
       const td = Object.assign(document.createElement("td"), { className: "include" });
@@ -336,7 +346,7 @@ function transactionRows(transactions, columns, showSource, selectable = false) 
       tr.append(td);
     }
     const cells = [
-      ["date", t.date],
+      ["date", displayDate(t.date)],
       ["payee", t.payee],
       ["memo", t.memo],
       [`amount ${t.amount < 0 ? "neg" : "pos"}`, amountFormat.format(t.amount)],
@@ -357,10 +367,10 @@ function transactionRows(transactions, columns, showSource, selectable = false) 
 function updateSelection() {
   const { transactions, pending, ignored } = conversion;
   const excluded = transactions.filter((t) => t.excluded).length;
-  const parts = [`${transactions.length} transactions`];
-  if (excluded) parts.push(`${excluded} excluded`);
-  if (pending.length) parts.push(`${pending.length} pending skipped`);
-  if (ignored.length) parts.push(`${ignored.length} other rows skipped`);
+  const parts = [transactionCount(transactions.length)];
+  if (excluded) parts.push(`${excluded} utelatt`);
+  if (pending.length) parts.push(`${pending.length} reservert, hoppet over`);
+  if (ignored.length) parts.push(`${ignored.length} andre rader hoppet over`);
   $("counts").textContent = parts.join(" · ");
 
   const all = $("include-all");
@@ -380,12 +390,12 @@ function render() {
   $("rows").replaceChildren(...transactionRows(transactions, columns, showSource, true));
 
   $("pending").hidden = !pending.length;
-  $("pending").querySelector("summary").textContent = `${pending.length} pending skipped`;
+  $("pending").querySelector("summary").textContent = `${pending.length} reservert, hoppet over`;
   $("pending-head").replaceChildren(headerRow(columns, showSource));
   $("pending-rows").replaceChildren(...transactionRows(pending, columns, showSource));
 
   $("ignored").hidden = !ignored.length;
-  $("ignored").querySelector("summary").textContent = `${ignored.length} other rows skipped`;
+  $("ignored").querySelector("summary").textContent = `${ignored.length} andre rader hoppet over`;
   $("ignored-rows").replaceChildren(
     ...ignored.map((text) => Object.assign(document.createElement("li"), { textContent: text })),
   );
@@ -421,6 +431,14 @@ const drop = $("drop");
 const input = $("file");
 
 $("connect").addEventListener("click", connect);
+$("about-open").addEventListener("click", () => $("about").showModal());
+$("about-close").addEventListener("click", () => $("about").close());
+// A click on the backdrop lands on the dialog itself, outside its content box.
+$("about").addEventListener("click", (e) => {
+  const box = e.currentTarget.getBoundingClientRect();
+  const inside = e.clientX >= box.left && e.clientX <= box.right && e.clientY >= box.top && e.clientY <= box.bottom;
+  if (!inside) e.currentTarget.close();
+});
 $("disconnect").addEventListener("click", () => disconnect());
 $("plan").addEventListener("change", loadAccounts);
 $("account").addEventListener("change", () => {

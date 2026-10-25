@@ -112,7 +112,7 @@ export function convertRows(rows) {
   for (const [key, name] of Object.entries(COLUMNS)) {
     idx[key] = header.indexOf(name);
     if (idx[key] === -1) {
-      throw new Error(`Column "${name}" not found. Is this a Handelsbanken export?`);
+      throw new Error(`Fant ikke kolonnen "${name}". Er dette en eksport fra Handelsbanken?`);
     }
   }
 

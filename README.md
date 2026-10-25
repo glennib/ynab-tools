@@ -2,6 +2,8 @@
 
 A static web app that imports a Handelsbanken transaction export (CSV) into YNAB.
 Everything runs in the browser: the file is parsed locally and sent only to the YNAB API, and there is no backend.
+The interface is in Norwegian, for customers of Handelsbanken in Norway;
+"Om handynab" in the header opens a dialog that explains the app and how to use it.
 
 1. Connect YNAB (OAuth). The access token is kept in the browser's local storage, so it survives closing the tab, and expires after two hours.
 2. Choose or drop the Handelsbanken export and check the preview.
@@ -11,8 +13,8 @@ Everything runs in the browser: the file is parsed locally and sent only to the 
 3. Pick a plan and account and import. Transactions arrive cleared and unapproved, ready for review in YNAB.
    The account's recent transactions in YNAB are listed below the account picker whenever YNAB is connected,
    with or without a file. They cover the last 30 days, or back to the file's first transaction if that is earlier.
-   Transactions whose `import_id` matches a row in the file are marked "in this file",
-   and "Exclude N already in YNAB" unticks those rows in the preview.
+   Transactions whose `import_id` matches a row in the file are marked "i denne filen",
+   and "Utelat N som allerede er i YNAB" unticks those rows in the preview.
 
 Without connecting, the converted file can be downloaded as a CSV for
 [YNAB's file-based import](https://support.ynab.com/en_us/file-based-import-a-guide-Bkj4Sszyo.md) instead.
@@ -22,7 +24,7 @@ Without connecting, the converted file can be downloaded as a CSV for
 - The date is the booking date (`Bokført dato`).
 - Pending rows (`Reservert`) are skipped; they are imported once booked.
   The preview lists them, and any other skipped rows (totals, balances), below the transactions.
-  "Show bank columns" adds the export's own columns next to the converted ones.
+  "Vis bankens kolonner" adds the export's own columns next to the converted ones.
 - Payee is the counterparty name when the bank provides one, otherwise a cleaned-up `Beskrivelse`.
 - Memo is `Melding/KID/Fakt.nr`, with line breaks joined by ` / `.
 - Imported transactions get an `import_id` in the format YNAB itself uses for file-based and direct import

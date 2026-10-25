@@ -59,7 +59,7 @@ test("falls back to Windows-1252 when the file is not UTF-8", () => {
 });
 
 test("rejects files without the expected columns", () => {
-  assert.throws(() => convert(bytes("Date;Amount\n01.01.2026;1\n")), /not found/);
+  assert.throws(() => convert(bytes("Date;Amount\n01.01.2026;1\n")), /Fant ikke kolonnen/);
 });
 
 test("serialises YNAB CSV with quoting", () => {

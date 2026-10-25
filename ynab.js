@@ -102,7 +102,7 @@ export class Ynab {
     });
     const json = await res.json().catch(() => null);
     if (!res.ok) {
-      throw new YnabError(res.status, json?.error?.detail || `YNAB API returned ${res.status}`);
+      throw new YnabError(res.status, json?.error?.detail || `YNAB svarte med feilkode ${res.status}`);
     }
     return json.data;
   }

@@ -59,6 +59,20 @@ details { margin-top: 1.25rem; }
 summary { cursor: pointer; color: var(--muted); }
 details .note { color: var(--muted); font-size: 0.875rem; margin: 0.5rem 0; }
 #ignored-rows { margin: 0; padding-left: 1.25rem; font-size: 0.875rem; overflow-wrap: anywhere; }
+footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--line);
+         color: var(--muted); font-size: 0.8rem; }
+footer p { margin: 0.25rem 0; }
+a { color: var(--accent); }
+dialog { max-width: min(36rem, calc(100vw - 2rem)); max-height: calc(100dvh - 2rem); box-sizing: border-box;
+         padding: 1.5rem; border: 1px solid var(--line); border-radius: 12px;
+         background: var(--bg); color: var(--fg); }
+dialog::backdrop { background: rgb(0 0 0 / 0.5); }
+dialog h2 { font-size: 1.25rem; margin: 0 0 0.75rem; }
+dialog h3 { font-size: 1rem; margin: 1.25rem 0 0.25rem; }
+dialog p, dialog ol { margin: 0.5rem 0; }
+dialog ol { padding-left: 1.25rem; }
+dialog li { margin-bottom: 0.4rem; }
+dialog .actions { display: flex; justify-content: flex-end; margin-top: 1.25rem; }
 
 @media (max-width: 640px) {
   main { padding: 1rem; }

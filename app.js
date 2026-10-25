@@ -108,7 +108,7 @@ function renderAuth() {
   } else {
     $("auth-status").textContent = "Not connected to YNAB";
   }
-  $("target").hidden = !ynab;
+  $("ynab").hidden = !ynab;
   if (ynab) loadPlans();
   else loadRecent();
   updateImportButton();
@@ -165,23 +165,23 @@ async function loadAccounts() {
 
 let recentRequest = 0;
 
-/** The last 30 days, reaching back further when the loaded file starts earlier. */
+/** The last 30 days, reaching back further when a loaded file starts earlier. */
 function recentSince() {
   const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-  const earliest = conversion.transactions.map((t) => t.date).sort()[0];
+  const earliest = conversion?.transactions.map((t) => t.date).sort()[0];
   return earliest && earliest < monthAgo ? earliest : monthAgo;
 }
 
 /**
- * Lists the selected account's recent YNAB transactions, marking those that
- * share an import_id with a row in the loaded file.
+ * Lists the selected account's recent YNAB transactions. With a file loaded,
+ * those that share an import_id with a row in it are marked.
  */
 async function loadRecent() {
   // Changing account or file while a request is in flight makes its answer stale.
   const request = ++recentRequest;
   const planId = $("plan").value;
   const accountId = $("account").value;
-  if (!ynab || !conversion || !accountId) {
+  if (!ynab || !accountId) {
     $("recent").hidden = true;
     return;
   }
@@ -195,7 +195,7 @@ async function loadRecent() {
 
   const recent = fromApiTransactions(transactions);
   // Excluded rows are still in the file, so they are matched too.
-  const all = conversion.transactions.map(({ excluded, ...t }) => t);
+  const all = (conversion?.transactions ?? []).map(({ excluded, ...t }) => t);
   const inFile = new Set(toApiTransactions(all, accountId).map((t) => t.import_id));
   const fromFile = recent.filter((t) => inFile.has(t.importId)).length;
   const account = $("account").selectedOptions[0].textContent;
@@ -222,6 +222,7 @@ function updateImportButton() {
   const button = $("import");
   const count = conversion?.transactions.filter((t) => !t.excluded).length ?? 0;
   const account = $("account").selectedOptions[0];
+  button.hidden = !conversion;
   button.disabled = !ynab || !count || !account;
   button.textContent = account
     ? `Import ${count} transactions into ${account.textContent}`

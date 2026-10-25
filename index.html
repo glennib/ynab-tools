@@ -25,11 +25,11 @@
     <input id="file" type="file" accept=".csv,text/csv,text/comma-separated-values,application/vnd.ms-excel" hidden>
   </label>
   <p id="error" hidden></p>
-  <section id="result" hidden>
-    <div id="target" hidden>
+  <section id="ynab" hidden>
+    <div id="target">
       <label>Plan <select id="plan"></select></label>
       <label>Account <select id="account"></select></label>
-      <button id="import" type="button" disabled>Import</button>
+      <button id="import" type="button" disabled hidden>Import</button>
     </div>
     <p id="import-status" hidden></p>
     <details id="recent" hidden>
@@ -41,6 +41,8 @@
         </table>
       </div>
     </details>
+  </section>
+  <section id="result" hidden>
     <div id="summary">
       <button id="download" type="button" class="secondary">Download YNAB CSV</button>
       <button id="clear" type="button" class="secondary">Clear</button>

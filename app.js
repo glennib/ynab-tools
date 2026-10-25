@@ -114,7 +114,7 @@ function renderAuth() {
   $("disconnect").hidden = !ynab;
   if (ynab) {
     const until = new Date(expiresAt).toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" });
-    $("auth-status").textContent = `Koblet til YNAB til kl. ${until}`;
+    $("auth-status").textContent = `Koblet til YNAB fram til kl. ${until}`;
   } else {
     $("auth-status").textContent = "Ikke koblet til YNAB";
   }

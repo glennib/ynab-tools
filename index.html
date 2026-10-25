@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Handelsbanken → YNAB</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #fafaf9; --fg: #1c1917; --muted: #78716c; --line: #d6d3d1;
+    --accent: #2563eb; --drop: #eff6ff; --neg: #b91c1c; --pos: #15803d;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1917; --fg: #f5f5f4; --muted: #a8a29e; --line: #44403c;
+      --accent: #60a5fa; --drop: #1e293b; --neg: #f87171; --pos: #4ade80;
+    }
+  }
+  body { margin: 0; background: var(--bg); color: var(--fg);
+         font: 15px/1.5 system-ui, sans-serif; }
+  main { max-width: 960px; margin: 0 auto; padding: 2rem 1rem; }
+  h1 { font-size: 1.4rem; margin: 0 0 1rem; }
+  #drop { border: 2px dashed var(--line); border-radius: 12px; padding: 3rem 1rem;
+          text-align: center; color: var(--muted); cursor: pointer; }
+  #drop.over { border-color: var(--accent); background: var(--drop); color: var(--fg); }
+  #summary { margin: 1.25rem 0 0.75rem; display: flex; gap: 1rem;
+             align-items: center; flex-wrap: wrap; }
+  #error { color: var(--neg); margin-top: 1rem; }
+  button { font: inherit; padding: 0.5rem 1rem; border: 0; border-radius: 8px;
+           background: var(--accent); color: white; cursor: pointer; }
+  .table { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.875rem; }
+  th, td { text-align: left; padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--line);
+           vertical-align: top; }
+  th { color: var(--muted); font-weight: 500; }
+  td.amount { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.amount.neg { color: var(--neg); }
+  td.amount.pos { color: var(--pos); }
+  td.date { white-space: nowrap; }
+  td.memo { color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Handelsbanken → YNAB</h1>
+  <label id="drop">
+    Drop a Handelsbanken CSV export here, or click to choose a file.
+    <input id="file" type="file" accept=".csv,text/csv" hidden>
+  </label>
+  <p id="error" hidden></p>
+  <section id="result" hidden>
+    <div id="summary">
+      <button id="download" type="button">Download YNAB CSV</button>
+      <span id="counts"></span>
+    </div>
+    <div class="table">
+      <table>
+        <thead><tr><th>Date</th><th>Payee</th><th>Memo</th><th>Amount</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+<script type="module">
+  import { convert, toYnabCsv } from "./convert.js";
+
+  const drop = document.getElementById("drop");
+  const input = document.getElementById("file");
+  const error = document.getElementById("error");
+  const result = document.getElementById("result");
+  let output = null;
+
+  async function handle(file) {
+    error.hidden = true;
+    result.hidden = true;
+    try {
+      const { transactions, pending, ignored } = convert(new Uint8Array(await file.arrayBuffer()));
+      output = {
+        name: file.name.replace(/\.csv$/i, "") + "-ynab.csv",
+        csv: toYnabCsv(transactions),
+      };
+      render(transactions, pending, ignored);
+    } catch (e) {
+      error.textContent = e.message;
+      error.hidden = false;
+    }
+  }
+
+  function render(transactions, pending, ignored) {
+    const parts = [`${transactions.length} transactions`];
+    if (pending) parts.push(`${pending} pending skipped`);
+    if (ignored) parts.push(`${ignored} other rows skipped`);
+    document.getElementById("counts").textContent = parts.join(" · ");
+
+    const tbody = document.getElementById("rows");
+    tbody.replaceChildren(...transactions.map((t) => {
+      const tr = document.createElement("tr");
+      const cells = [
+        ["date", t.date],
+        ["", t.payee],
+        ["memo", t.memo],
+        [`amount ${t.amount < 0 ? "neg" : "pos"}`, t.amount.toFixed(2)],
+      ];
+      for (const [cls, text] of cells) {
+        const td = document.createElement("td");
+        td.className = cls;
+        td.textContent = text;
+        tr.append(td);
+      }
+      return tr;
+    }));
+    result.hidden = false;
+  }
+
+  document.getElementById("download").addEventListener("click", () => {
+    const url = URL.createObjectURL(new Blob([output.csv], { type: "text/csv;charset=utf-8" }));
+    const a = Object.assign(document.createElement("a"), { href: url, download: output.name });
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  input.addEventListener("change", () => input.files[0] && handle(input.files[0]));
+  for (const type of ["dragenter", "dragover"]) {
+    drop.addEventListener(type, (e) => { e.preventDefault(); drop.classList.add("over"); });
+  }
+  for (const type of ["dragleave", "drop"]) {
+    drop.addEventListener(type, () => drop.classList.remove("over"));
+  }
+  drop.addEventListener("drop", (e) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file) handle(file);
+  });
+  // Dropping a file outside the zone should not navigate away from the page.
+  window.addEventListener("dragover", (e) => e.preventDefault());
+  window.addEventListener("drop", (e) => e.preventDefault());
+</script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+:root {
+  color-scheme: light dark;
+  --bg: #fafaf9; --fg: #1c1917; --muted: #78716c; --line: #d6d3d1;
+  --accent: #2563eb; --drop: #eff6ff; --neg: #b91c1c; --pos: #15803d;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1c1917; --fg: #f5f5f4; --muted: #a8a29e; --line: #44403c;
+    --accent: #60a5fa; --drop: #1e293b; --neg: #f87171; --pos: #4ade80;
+  }
+}
+body { margin: 0; background: var(--bg); color: var(--fg);
+       font: 15px/1.5 system-ui, sans-serif; }
+main { max-width: 960px; margin: 0 auto; padding: 2rem 1rem; }
+header { display: flex; justify-content: space-between; align-items: center;
+         gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+h1 { font-size: 1.4rem; margin: 0; }
+#auth { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; color: var(--muted); }
+#drop { display: block; border: 2px dashed var(--line); border-radius: 12px; padding: 3rem 1rem;
+        text-align: center; color: var(--muted); cursor: pointer; }
+#drop.over { border-color: var(--accent); background: var(--drop); color: var(--fg); }
+#target { margin-top: 1.25rem; display: flex; gap: 1rem; align-items: end; flex-wrap: wrap; }
+#target label { display: flex; flex-direction: column; gap: 0.25rem; color: var(--muted);
+                font-size: 0.875rem; }
+#summary { margin: 1.25rem 0 0.75rem; display: flex; gap: 1rem;
+           align-items: center; flex-wrap: wrap; }
+#error { color: var(--neg); margin-top: 1rem; }
+#import-status { margin: 0.75rem 0 0; }
+button { font: inherit; padding: 0.5rem 1rem; border: 0; border-radius: 8px;
+         background: var(--accent); color: white; cursor: pointer; }
+button.secondary { background: transparent; color: var(--fg); border: 1px solid var(--line); }
+button:disabled { opacity: 0.5; cursor: default; }
+select { font: inherit; padding: 0.4rem 0.5rem; border: 1px solid var(--line); border-radius: 8px;
+         background: var(--bg); color: var(--fg); min-width: 12rem; max-width: 100%; }
+.table { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.875rem; }
+th, td { text-align: left; padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--line);
+         vertical-align: top; }
+th { color: var(--muted); font-weight: 500; }
+td.amount { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+td.amount.neg { color: var(--neg); }
+td.amount.pos { color: var(--pos); }
+td.date { white-space: nowrap; }
+td.memo { color: var(--muted); }
+
+@media (max-width: 640px) {
+  main { padding: 1rem; }
+  #drop { padding: 2rem 1rem; }
+  button, select { min-height: 2.75rem; }
+  #target { flex-direction: column; align-items: stretch; }
+  #target select { width: 100%; }
+  /* Each transaction becomes a card: date and amount on top, payee and memo below. */
+  thead { display: none; }
+  table, tbody { display: block; }
+  tr { display: grid; grid-template-columns: 1fr auto; gap: 0 1rem;
+       padding: 0.5rem 0; border-bottom: 1px solid var(--line); }
+  td { border: 0; padding: 0; }
+  td.date { color: var(--muted); grid-row: 1; grid-column: 1; }
+  td.amount { grid-row: 1; grid-column: 2; }
+  td:nth-child(2) { grid-column: 1 / -1; font-weight: 500; }
+  td.memo { grid-column: 1 / -1; overflow-wrap: anywhere; }
+  td.memo:empty { display: none; }
+}

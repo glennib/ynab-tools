@@ -18,6 +18,7 @@ const KEYS = {
   conversion: "handynab.conversion",
   plan: "handynab.plan",
   account: "handynab.account",
+  showSource: "handynab.showSource",
 };
 
 function load(storage, key) {
@@ -37,7 +38,7 @@ function save(storage, key, value) {
   }
 }
 
-let conversion = null; // { name, transactions, pending, ignored }
+let conversion = null; // { name, columns, transactions, pending, ignored }
 let ynab = null;
 let expiresAt = 0;
 
@@ -198,8 +199,7 @@ async function handle(file) {
   $("result").hidden = true;
   $("import-status").hidden = true;
   try {
-    const { transactions, pending, ignored } = convert(new Uint8Array(await file.arrayBuffer()));
-    conversion = { name: file.name, transactions, pending, ignored };
+    conversion = { name: file.name, ...convert(new Uint8Array(await file.arrayBuffer())) };
     render();
   } catch (e) {
     conversion = null;
@@ -207,31 +207,64 @@ async function handle(file) {
   }
 }
 
+// The bank's own columns are shown after the ones that are imported, muted, to
+// help explain how a row was converted.
+function headerRow(columns, showSource) {
+  const tr = document.createElement("tr");
+  for (const name of ["Date", "Payee", "Memo", "Amount"]) {
+    tr.append(Object.assign(document.createElement("th"), { textContent: name }));
+  }
+  if (showSource) {
+    for (const name of columns) {
+      tr.append(Object.assign(document.createElement("th"), { className: "source", textContent: name }));
+    }
+  }
+  return tr;
+}
+
+function transactionRows(transactions, columns, showSource) {
+  return transactions.map((t) => {
+    const tr = document.createElement("tr");
+    const cells = [
+      ["date", t.date],
+      ["", t.payee],
+      ["memo", t.memo],
+      [`amount ${t.amount < 0 ? "neg" : "pos"}`, amountFormat.format(t.amount)],
+    ];
+    if (showSource) cells.push(...columns.map((name, i) => ["source", t.source[i], name]));
+    for (const [cls, text, label] of cells) {
+      const td = document.createElement("td");
+      td.className = cls;
+      td.textContent = text;
+      if (label) td.dataset.label = label;
+      tr.append(td);
+    }
+    return tr;
+  });
+}
+
 function render() {
-  const { transactions, pending, ignored } = conversion;
+  const { columns, transactions, pending, ignored } = conversion;
+  const showSource = $("show-source").checked;
   const parts = [`${transactions.length} transactions`];
-  if (pending) parts.push(`${pending} pending skipped`);
-  if (ignored) parts.push(`${ignored} other rows skipped`);
+  if (pending.length) parts.push(`${pending.length} pending skipped`);
+  if (ignored.length) parts.push(`${ignored.length} other rows skipped`);
   $("counts").textContent = parts.join(" · ");
 
-  $("rows").replaceChildren(
-    ...transactions.map((t) => {
-      const tr = document.createElement("tr");
-      const cells = [
-        ["date", t.date],
-        ["", t.payee],
-        ["memo", t.memo],
-        [`amount ${t.amount < 0 ? "neg" : "pos"}`, amountFormat.format(t.amount)],
-      ];
-      for (const [cls, text] of cells) {
-        const td = document.createElement("td");
-        td.className = cls;
-        td.textContent = text;
-        tr.append(td);
-      }
-      return tr;
-    }),
+  $("head").replaceChildren(headerRow(columns, showSource));
+  $("rows").replaceChildren(...transactionRows(transactions, columns, showSource));
+
+  $("pending").hidden = !pending.length;
+  $("pending").querySelector("summary").textContent = `${pending.length} pending skipped`;
+  $("pending-head").replaceChildren(headerRow(columns, showSource));
+  $("pending-rows").replaceChildren(...transactionRows(pending, columns, showSource));
+
+  $("ignored").hidden = !ignored.length;
+  $("ignored").querySelector("summary").textContent = `${ignored.length} other rows skipped`;
+  $("ignored-rows").replaceChildren(
+    ...ignored.map((text) => Object.assign(document.createElement("li"), { textContent: text })),
   );
+
   $("result").hidden = false;
   updateImportButton();
 }
@@ -258,6 +291,11 @@ $("account").addEventListener("change", () => {
 });
 $("import").addEventListener("click", importTransactions);
 $("download").addEventListener("click", download);
+$("show-source").checked = Boolean(load(localStorage, KEYS.showSource));
+$("show-source").addEventListener("change", () => {
+  save(localStorage, KEYS.showSource, $("show-source").checked);
+  render();
+});
 
 input.addEventListener("change", () => input.files[0] && handle(input.files[0]));
 for (const type of ["dragenter", "dragover"]) {

@@ -5,6 +5,7 @@ const MEMO_MAX = 500;
 const PAYEE_MAX = 200;
 
 const COLUMNS = {
+  executed: "Utført dato",
   booked: "Bokført dato",
   description: "Beskrivelse",
   sender: "Avsender",
@@ -98,9 +99,12 @@ function squash(text) {
 
 /**
  * Converts parsed Handelsbanken rows to YNAB transactions.
- * Pending ("Reservert") rows are skipped since they reappear once booked, and
- * would otherwise be imported twice. Rows without a booked date (summary lines,
- * blank padding) are skipped as non-transactions.
+ * Pending ("Reservert") rows are left out since they reappear once booked, and
+ * would otherwise be imported twice; they are returned separately, dated by when
+ * they were made. Rows without a booked date (summary lines) are returned as
+ * their non-empty cells, and blank padding rows are dropped.
+ * Transactions keep the bank's own cells as `source`, matching `columns`, so
+ * the preview can show what each one was converted from.
  */
 export function convertRows(rows) {
   const header = rows[0]?.map((h) => h.trim()) ?? [];
@@ -113,28 +117,31 @@ export function convertRows(rows) {
   }
 
   const transactions = [];
-  let pending = 0;
-  let ignored = 0;
+  const pending = [];
+  const ignored = [];
   for (const row of rows.slice(1)) {
     const get = (key) => (row[idx[key]] ?? "").trim();
+    const transaction = (date, amount) => {
+      const counterparty = amount >= 0 ? get("sender") : get("recipient");
+      const payee = (counterparty || cleanPayee(get("description"))).slice(0, PAYEE_MAX);
+      const memo = squash(row[idx.message] ?? "").slice(0, MEMO_MAX);
+      const source = header.map((_, i) => squash(row[i] ?? ""));
+      return { date, payee, memo, amount, source };
+    };
+    const amount = parseAmount(get("inflow")) ?? parseAmount(get("outflow"));
     if (get("status") === "Reservert") {
-      pending++;
+      pending.push(transaction(isoDate(get("executed")) ?? "", amount ?? 0));
       continue;
     }
     const date = isoDate(get("booked"));
-    const inflow = parseAmount(get("inflow"));
-    const outflow = parseAmount(get("outflow"));
-    const amount = inflow ?? outflow;
     if (!date || amount === null) {
-      if (row.some((cell) => cell.trim() !== "")) ignored++;
+      const cells = row.map((cell) => cell.trim()).filter(Boolean);
+      if (cells.length) ignored.push(cells.join(" · "));
       continue;
     }
-    const counterparty = amount >= 0 ? get("sender") : get("recipient");
-    const payee = (counterparty || cleanPayee(get("description"))).slice(0, PAYEE_MAX);
-    const memo = squash(row[idx.message] ?? "").slice(0, MEMO_MAX);
-    transactions.push({ date, payee, memo, amount });
+    transactions.push(transaction(date, amount));
   }
-  return { transactions, pending, ignored };
+  return { columns: header, transactions, pending, ignored };
 }
 
 function csvField(value) {

@@ -14,6 +14,8 @@ Without connecting, the converted file can be downloaded as a CSV for
 
 - The date is the booking date (`Bokført dato`).
 - Pending rows (`Reservert`) are skipped; they are imported once booked.
+  The preview lists them, and any other skipped rows (totals, balances), below the transactions.
+  "Show bank columns" adds the export's own columns next to the converted ones.
 - Payee is the counterparty name when the bank provides one, otherwise a cleaned-up `Beskrivelse`.
 - Memo is `Melding/KID/Fakt.nr`, with line breaks joined by ` / `.
 - Imported transactions get an `import_id` in the format YNAB itself uses for file-based and direct import

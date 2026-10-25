@@ -25,9 +25,19 @@ const SAMPLE = [
 const bytes = (s) => new TextEncoder().encode(s);
 
 test("converts booked transactions and skips pending and summary rows", () => {
-  const { transactions, pending, ignored } = convert(bytes(SAMPLE));
-  assert.equal(pending, 1);
-  assert.equal(ignored, 2);
+  const { columns, transactions: converted, pending: pendingRows, ignored } = convert(bytes(SAMPLE));
+  const withoutSource = (rows) => rows.map(({ source, ...t }) => t);
+  const transactions = withoutSource(converted);
+  const pending = withoutSource(pendingRows);
+  assert.equal(columns.length, 15);
+  assert.equal(converted[0].source[columns.indexOf("Status")], "Bokført");
+  assert.deepEqual(pending, [
+    { date: "2026-10-24", payee: "KIWI 100 SENTRUM", memo: "KIWI 100 SENTRUM", amount: -100.5 },
+  ]);
+  assert.deepEqual(ignored, [
+    "Total beløp inn på konto: · 50 713,83 NOK",
+    "Utgående  saldo pr. 25.10.2026: · 1 234,56 NOK",
+  ]);
   assert.deepEqual(transactions, [
     { date: "2026-10-23", payee: "KAFE", memo: "*1111 22.10 NOK 33.00 Vipps*KAFE Kurs: 1.0000", amount: -33 },
     { date: "2026-10-23", payee: "KIWI 100 SENTRUM STORGATA OSLO", memo: "22.10 KIWI 100 SENTRUM STORGATA OSLO", amount: -79.8 },

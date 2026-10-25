@@ -57,6 +57,25 @@ export function toApiTransactions(transactions, accountId) {
   });
 }
 
+/**
+ * Maps YNAB API transactions to the preview's shape, newest first, leaving out
+ * deleted ones. Amounts are converted from milliunits.
+ */
+export function fromApiTransactions(transactions) {
+  return transactions
+    .filter((t) => !t.deleted)
+    .map((t) => ({
+      date: t.date,
+      payee: t.payee_name ?? "",
+      memo: t.memo ?? "",
+      amount: t.amount / 1000,
+      cleared: t.cleared,
+      approved: t.approved,
+      importId: t.import_id,
+    }))
+    .sort((a, b) => b.date.localeCompare(a.date));
+}
+
 export class YnabError extends Error {
   constructor(status, detail) {
     super(detail);
@@ -93,6 +112,14 @@ export class Ynab {
   async accounts(planId) {
     const { accounts } = await this.request("GET", `/plans/${encodeURIComponent(planId)}/accounts`);
     return accounts.filter((a) => !a.closed && !a.deleted);
+  }
+
+  /** Lists an account's transactions dated on or after sinceDate ("YYYY-MM-DD"). */
+  async accountTransactions(planId, accountId, sinceDate) {
+    const path = `/plans/${encodeURIComponent(planId)}/accounts/${encodeURIComponent(accountId)}/transactions`;
+    const query = new URLSearchParams({ since_date: sinceDate });
+    const { transactions } = await this.request("GET", `${path}?${query}`);
+    return transactions;
   }
 
   /** Creates transactions; returns { created, duplicates } counts. */

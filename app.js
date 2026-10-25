@@ -1,6 +1,6 @@
 import { convert, toYnabCsv } from "./convert.js";
 import { YNAB_CLIENT_ID } from "./config.js";
-import { Ynab, authorizeUrl, parseRedirect, toApiTransactions } from "./ynab.js";
+import { Ynab, authorizeUrl, fromApiTransactions, parseRedirect, toApiTransactions } from "./ynab.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -19,6 +19,7 @@ const KEYS = {
   plan: "handynab.plan",
   account: "handynab.account",
   showSource: "handynab.showSource",
+  showRecent: "handynab.showRecent",
 };
 
 function load(storage, key) {
@@ -111,6 +112,7 @@ function renderAuth() {
   }
   $("target").hidden = !ynab;
   if (ynab) loadPlans();
+  else loadRecent();
   updateImportButton();
 }
 
@@ -158,6 +160,62 @@ async function loadAccounts() {
   accounts.sort((a, b) => Number(b.on_budget) - Number(a.on_budget));
   fillSelect($("account"), accounts, load(localStorage, KEYS.account));
   updateImportButton();
+  loadRecent();
+}
+
+// --- Recent transactions in YNAB -------------------------------------------
+
+let recentRequest = 0;
+
+/** The last 30 days, reaching back further when the loaded file starts earlier. */
+function recentSince() {
+  const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const earliest = conversion.transactions.map((t) => t.date).sort()[0];
+  return earliest && earliest < monthAgo ? earliest : monthAgo;
+}
+
+/**
+ * Lists the selected account's recent YNAB transactions, marking those that
+ * share an import_id with a row in the loaded file.
+ */
+async function loadRecent() {
+  // Changing account or file while a request is in flight makes its answer stale.
+  const request = ++recentRequest;
+  const planId = $("plan").value;
+  const accountId = $("account").value;
+  if (!ynab || !conversion || !accountId) {
+    $("recent").hidden = true;
+    return;
+  }
+  const since = recentSince();
+  const transactions = await call(() => ynab.accountTransactions(planId, accountId, since)).catch(() => null);
+  if (request !== recentRequest) return;
+  if (!transactions) {
+    $("recent").hidden = true;
+    return;
+  }
+
+  const recent = fromApiTransactions(transactions);
+  const inFile = new Set(toApiTransactions(conversion.transactions, accountId).map((t) => t.import_id));
+  const fromFile = recent.filter((t) => inFile.has(t.importId)).length;
+  const account = $("account").selectedOptions[0].textContent;
+  const parts = [`${recent.length} transactions in ${account} since ${since}`];
+  if (fromFile) parts.push(`${fromFile} from this file`);
+  $("recent").querySelector("summary").textContent = parts.join(" · ");
+
+  const head = headerRow([], false);
+  head.append(Object.assign(document.createElement("th"), { textContent: "Status" }));
+  $("recent-head").replaceChildren(head);
+  const rows = transactionRows(recent, [], false);
+  recent.forEach((t, i) => {
+    const flags = [];
+    if (inFile.has(t.importId)) flags.push("in this file");
+    if (!t.approved) flags.push("unapproved");
+    if (t.cleared === "uncleared") flags.push("uncleared");
+    rows[i].append(Object.assign(document.createElement("td"), { className: "flags", textContent: flags.join(", ") }));
+  });
+  $("recent-rows").replaceChildren(...rows);
+  $("recent").hidden = false;
 }
 
 function updateImportButton() {
@@ -185,6 +243,7 @@ async function importTransactions() {
     const parts = [`${created} imported`];
     if (duplicates) parts.push(`${duplicates} already in YNAB`);
     status.textContent = `${parts.join(" · ")}. New transactions are unapproved for review in YNAB.`;
+    loadRecent();
   } catch {
     status.hidden = true;
   } finally {
@@ -267,6 +326,7 @@ function render() {
 
   $("result").hidden = false;
   updateImportButton();
+  loadRecent();
 }
 
 function download() {
@@ -285,6 +345,7 @@ function clear() {
   $("result").hidden = true;
   $("import-status").hidden = true;
   updateImportButton();
+  loadRecent();
 }
 
 // --- Wiring ---------------------------------------------------------------
@@ -298,7 +359,10 @@ $("plan").addEventListener("change", loadAccounts);
 $("account").addEventListener("change", () => {
   save(localStorage, KEYS.account, $("account").value);
   updateImportButton();
+  loadRecent();
 });
+$("recent").open = Boolean(load(localStorage, KEYS.showRecent));
+$("recent").addEventListener("toggle", () => save(localStorage, KEYS.showRecent, $("recent").open));
 $("import").addEventListener("click", importTransactions);
 $("download").addEventListener("click", download);
 $("clear").addEventListener("click", clear);

@@ -42,6 +42,8 @@ td.amount.neg { color: var(--neg); }
 td.amount.pos { color: var(--pos); }
 td.date { white-space: nowrap; }
 td.memo { color: var(--muted); }
+td.flags { color: var(--muted); font-size: 0.8rem; white-space: nowrap; }
+#recent { margin-top: 1rem; }
 #show-source-label { margin-left: auto; color: var(--muted); font-size: 0.875rem;
                      display: flex; gap: 0.4rem; align-items: center; cursor: pointer; }
 th.source, td.source { color: var(--muted); font-size: 0.8rem; white-space: nowrap; opacity: 0.8; }
@@ -75,4 +77,6 @@ details .note { color: var(--muted); font-size: 0.875rem; margin: 0.5rem 0; }
   td.source { grid-column: 1 / -1; font-size: 0.75rem; white-space: normal; overflow-wrap: anywhere; }
   td.source::before { content: attr(data-label) ": "; }
   td.source:empty { display: none; }
+  td.flags { grid-column: 1 / -1; white-space: normal; }
+  td.flags:empty { display: none; }
 }

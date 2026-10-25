@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { authorizeUrl, parseRedirect, toApiTransactions } from "./ynab.js";
+import { authorizeUrl, fromApiTransactions, parseRedirect, toApiTransactions } from "./ynab.js";
 
 test("builds an implicit grant authorize URL", () => {
   const url = new URL(authorizeUrl({ clientId: "abc", redirectUri: "https://x.test/app/", state: "s1" }));
@@ -40,4 +40,20 @@ test("maps transactions to milliunits with YNAB-style import ids", () => {
   );
   assert.ok(txs.every((t) => t.account_id === "acc" && t.cleared === "cleared" && t.approved === false));
   assert.ok(txs.every((t) => t.import_id.length <= 36));
+});
+
+test("maps API transactions newest first, without deleted ones", () => {
+  const base = { memo: null, cleared: "cleared", approved: true, import_id: null, deleted: false };
+  const txs = fromApiTransactions([
+    { ...base, date: "2026-10-20", payee_name: "KIWI", amount: -79800 },
+    { ...base, date: "2026-10-23", payee_name: null, memo: "x", amount: 1500, cleared: "uncleared",
+      approved: false, import_id: "YNAB:1500:2026-10-23:1" },
+    { ...base, date: "2026-10-24", payee_name: "Gone", amount: -1000, deleted: true },
+  ]);
+  assert.deepEqual(txs, [
+    { date: "2026-10-23", payee: "", memo: "x", amount: 1.5, cleared: "uncleared", approved: false,
+      importId: "YNAB:1500:2026-10-23:1" },
+    { date: "2026-10-20", payee: "KIWI", memo: "", amount: -79.8, cleared: "cleared", approved: true,
+      importId: null },
+  ]);
 });

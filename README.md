@@ -6,6 +6,9 @@ Everything runs in the browser: the file is parsed locally and sent only to the 
 1. Connect YNAB (OAuth). The access token is kept in the browser's local storage, so it survives closing the tab, and expires after two hours.
 2. Choose or drop the Handelsbanken export and check the preview.
 3. Pick a plan and account and import. Transactions arrive cleared and unapproved, ready for review in YNAB.
+   The account's recent transactions in YNAB are listed below the account picker, covering the last 30 days
+   or back to the file's first transaction if that is earlier.
+   Transactions whose `import_id` matches a row in the file are marked "in this file".
 
 Without connecting, the converted file can be downloaded as a CSV for
 [YNAB's file-based import](https://support.ynab.com/en_us/file-based-import-a-guide-Bkj4Sszyo.md) instead.

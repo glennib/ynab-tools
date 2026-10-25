@@ -104,3 +104,7 @@ dialog .actions { display: flex; justify-content: flex-end; margin-top: 1.25rem;
   tr:has(.include) > td.amount { grid-column: 3; }
   .include input { width: 1.25rem; height: 1.25rem; }
 }
+.policy h1 a { color: inherit; text-decoration: none; }
+.policy h2 { font-size: 1.25rem; margin: 1.5rem 0 0.25rem; }
+.policy h3 { font-size: 1rem; margin: 1.5rem 0 0.25rem; }
+.policy .note { color: var(--muted); font-size: 0.875rem; margin-top: 0; }

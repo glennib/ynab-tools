@@ -11,7 +11,8 @@ const CLIENT_ID = process.env.YNAB_CLIENT_ID ?? "";
 
 // The files the page loads; the same set the Dockerfile copies into the image.
 const FILES = new Set([
-  "/index.html", "/app.js", "/convert.js", "/ynab.js", "/style.css",
+  "/index.html", "/personvern.html", "/privacy.html",
+  "/app.js", "/convert.js", "/ynab.js", "/style.css",
   "/favicon.svg", "/favicon.ico", "/apple-touch-icon.png",
 ]);
 const TYPES = {

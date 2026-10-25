@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy – handynab</title>
+<link rel="icon" href="favicon.ico" sizes="32x32">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="stylesheet" href="style.css">
+<link rel="alternate" hreflang="nb" href="personvern.html">
+<link rel="alternate" hreflang="en" href="privacy.html">
+</head>
+<body>
+<main class="policy">
+  <header>
+    <h1><a href="./">handynab</a></h1>
+    <a href="personvern.html" hreflang="nb" lang="nb">Norsk</a>
+  </header>
+  <h2>Privacy policy</h2>
+  <p class="note">Last updated 25 October 2026.</p>
+  <p>
+    <strong>In short: we receive no data about you.</strong>
+    handynab runs entirely in your browser. There is no server that sees, receives or stores your
+    transactions, your YNAB data or anything else about you.
+  </p>
+
+  <h3>What happens to your data</h3>
+  <p>
+    When you choose a CSV export from Handelsbanken, the file is read and converted locally in your browser.
+    It is not uploaded anywhere.
+  </p>
+  <p>
+    If you connect YNAB, your browser talks directly to the YNAB API. handynab fetches your plans and accounts
+    and the account's recent transactions, so you can choose where the transactions go and see what has
+    already been imported. When you press <em>Importer</em> (Import), the transactions you selected are sent
+    to YNAB. None of this passes through us.
+  </p>
+  <p>
+    If you download a converted CSV file instead, it is saved only on your own device.
+  </p>
+
+  <h3>What is stored in your browser</h3>
+  <p>handynab uses the browser's local storage, not cookies:</p>
+  <ul>
+    <li>
+      <strong>Local storage:</strong> the YNAB access token, which expires after two hours, the last selected
+      plan and account, and display choices such as whether to show the bank's columns.
+    </li>
+    <li>
+      <strong>Session storage:</strong> the loaded file and which transactions you have unticked.
+      This is removed when you close the tab or press <em>Fjern fil</em> (Clear file).
+    </li>
+  </ul>
+  <p>
+    This stays on your device and is never sent to us. <em>Koble fra</em> (Disconnect) deletes the access
+    token, and you can delete everything by clearing handynab's site data in your browser.
+  </p>
+
+  <h3>YNAB</h3>
+  <p>
+    Access to YNAB is granted through YNAB's own sign-in, and handynab never sees your password.
+    What you send to YNAB is handled under
+    <a href="https://www.ynab.com/privacy-policy" target="_blank" rel="noreferrer">YNAB's privacy policy</a>.
+    You can revoke access at any time in your YNAB account settings.
+  </p>
+
+  <h3>No tracking</h3>
+  <p>
+    handynab has no analytics, ads, cookies or third-party scripts.
+    The page is set up so that the browser only allows requests to the YNAB API.
+  </p>
+
+  <h3>Server logs</h3>
+  <p>
+    As with most websites, the web server that serves handynab may log standard request details, such as
+    IP address, time and which file was requested. These logs contain no transactions or YNAB data, and the
+    YNAB access token is never sent to the server. The logs are used only for operations and troubleshooting.
+  </p>
+
+  <h3>Changes</h3>
+  <p>
+    If this policy changes, the date at the top is updated. The full history is in the
+    <a href="https://github.com/glennib/ynab-tools/commits/main/privacy.html" target="_blank" rel="noreferrer">source code on GitHub</a>.
+  </p>
+
+  <h3>Contact</h3>
+  <p>
+    handynab is made by Glenn Bitar. Questions about privacy can be raised as an
+    <a href="https://github.com/glennib/ynab-tools/issues" target="_blank" rel="noreferrer">issue on GitHub</a>.
+  </p>
+
+  <footer>
+    <p><a href="./">Back to handynab</a></p>
+  </footer>
+</main>
+</body>
+</html>

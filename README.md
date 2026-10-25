@@ -34,6 +34,12 @@ Without connecting, the converted file can be downloaded as a CSV for
 - The downloaded CSV has the columns `Date,Payee,Memo,Amount`, with ISO dates and a single signed amount.
   In YNAB's import dialog, map `Amount` to both Inflow and Outflow.
 
+## Privacy policy
+
+The privacy policy is served at `/personvern.html` (Norwegian) and `/privacy.html` (English).
+The two pages link to each other, and the app links to the Norwegian one, matching its interface.
+Give YNAB the English URL when registering or submitting the OAuth application.
+
 ## YNAB OAuth application
 
 The app uses OAuth's implicit grant, so it needs an OAuth application registered under

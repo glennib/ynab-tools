@@ -3,7 +3,7 @@
 A static web app that imports a Handelsbanken transaction export (CSV) into YNAB.
 Everything runs in the browser: the file is parsed locally and sent only to the YNAB API, and there is no backend.
 
-1. Connect YNAB (OAuth). The access token is kept in the tab's session storage and expires after two hours.
+1. Connect YNAB (OAuth). The access token is kept in the browser's local storage, so it survives closing the tab, and expires after two hours.
 2. Choose or drop the Handelsbanken export and check the preview.
 3. Pick a plan and account and import. Transactions arrive cleared and unapproved, ready for review in YNAB.
 

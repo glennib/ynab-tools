@@ -4,8 +4,9 @@ import { Ynab, authorizeUrl, parseRedirect, toApiTransactions } from "./ynab.js"
 
 const $ = (id) => document.getElementById(id);
 
-// The token and OAuth state live in sessionStorage so they die with the tab.
-// The last used plan and account are remembered across sessions in localStorage.
+// The token, and the last used plan and account, are kept in localStorage so they
+// survive closing the tab; the token is dropped once it expires. The OAuth state and
+// the converted file only need to survive the redirect, so they live in sessionStorage.
 const KEYS = {
   token: "handynab.token",
   state: "handynab.oauthState",
@@ -59,13 +60,13 @@ function connect() {
 }
 
 function disconnect(message = "") {
-  save(sessionStorage, KEYS.token, null);
+  save(localStorage, KEYS.token, null);
   ynab = null;
   renderAuth();
   showError(message);
 }
 
-/** Picks up a token from the OAuth redirect, or a still valid one from this tab. */
+/** Picks up a token from the OAuth redirect, or a still valid stored one. */
 function restoreSession() {
   const redirect = parseRedirect(location.hash);
   if (redirect) {
@@ -77,16 +78,16 @@ function restoreSession() {
     } else if (redirect.error) {
       showError(`YNAB authorisation failed: ${redirect.error}`);
     } else {
-      save(sessionStorage, KEYS.token, { token: redirect.token, expiresAt: redirect.expiresAt });
+      save(localStorage, KEYS.token, { token: redirect.token, expiresAt: redirect.expiresAt });
     }
   }
 
-  const stored = load(sessionStorage, KEYS.token);
+  const stored = load(localStorage, KEYS.token);
   if (stored && stored.expiresAt > Date.now()) {
     ynab = new Ynab(stored.token);
     expiresAt = stored.expiresAt;
   } else {
-    save(sessionStorage, KEYS.token, null);
+    save(localStorage, KEYS.token, null);
   }
 
   conversion = load(sessionStorage, KEYS.conversion);

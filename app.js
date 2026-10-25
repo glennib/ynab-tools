@@ -11,7 +11,8 @@ const amountFormat = new Intl.NumberFormat("en-US", {
 
 // The token, and the last used plan and account, are kept in localStorage so they
 // survive closing the tab; the token is dropped once it expires. The OAuth state and
-// the converted file only need to survive the redirect, so they live in sessionStorage.
+// the converted file, with any excluded rows, live in sessionStorage: they survive
+// the OAuth redirect and reloads, but the bank data is gone once the tab is closed.
 const KEYS = {
   token: "handynab.token",
   state: "handynab.oauthState",
@@ -61,8 +62,6 @@ function connect() {
   }
   const state = crypto.randomUUID();
   save(sessionStorage, KEYS.state, state);
-  // The redirect leaves the page; keep the converted file so it survives the round trip.
-  save(sessionStorage, KEYS.conversion, conversion);
   location.assign(authorizeUrl({ clientId: YNAB_CLIENT_ID, redirectUri: redirectUri(), state }));
 }
 
@@ -98,7 +97,6 @@ function restoreSession() {
   }
 
   conversion = load(sessionStorage, KEYS.conversion);
-  save(sessionStorage, KEYS.conversion, null);
 }
 
 function renderAuth() {
@@ -264,6 +262,7 @@ async function handle(file) {
     render();
   } catch (e) {
     conversion = null;
+    save(sessionStorage, KEYS.conversion, null);
     showError(e.message);
   }
 }
@@ -342,6 +341,7 @@ function updateSelection() {
 function render() {
   const { columns, transactions, pending, ignored } = conversion;
   const showSource = $("show-source").checked;
+  save(sessionStorage, KEYS.conversion, conversion);
 
   $("head").replaceChildren(headerRow(columns, showSource, true));
   $("rows").replaceChildren(...transactionRows(transactions, columns, showSource, true));
@@ -372,6 +372,7 @@ function download() {
 
 function clear() {
   conversion = null;
+  save(sessionStorage, KEYS.conversion, null);
   // Resetting the input lets the same file be chosen again.
   input.value = "";
   showError("");
@@ -400,6 +401,7 @@ $("rows").addEventListener("change", (e) => {
   const transaction = conversion.transactions[index];
   transaction.excluded = !e.target.checked;
   e.target.closest("tr").classList.toggle("excluded", transaction.excluded);
+  save(sessionStorage, KEYS.conversion, conversion);
   updateSelection();
 });
 $("head").addEventListener("change", (e) => {

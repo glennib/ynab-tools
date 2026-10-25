@@ -164,6 +164,35 @@ async function loadAccounts() {
 // --- Recent transactions in YNAB -------------------------------------------
 
 let recentRequest = 0;
+// The import_ids of the selected account's recent YNAB transactions. They reach
+// back to the loaded file's first transaction, so every row in it can be checked.
+let seenImportIds = new Set();
+
+/**
+ * The import_id of each transaction in the loaded file, in file order.
+ * Excluded rows are still in the file, so they get one too.
+ */
+function fileImportIds() {
+  const all = (conversion?.transactions ?? []).map(({ excluded, ...t }) => t);
+  return toApiTransactions(all, $("account").value).map((t) => t.import_id);
+}
+
+/** Included transactions in the loaded file that are already in the selected account. */
+function seenTransactions() {
+  const ids = fileImportIds();
+  return (conversion?.transactions ?? []).filter((t, i) => !t.excluded && seenImportIds.has(ids[i]));
+}
+
+function updateExcludeSeen() {
+  const count = seenTransactions().length;
+  $("exclude-seen").hidden = !count;
+  $("exclude-seen").textContent = `Exclude ${count} already in YNAB`;
+}
+
+function excludeSeen() {
+  for (const t of seenTransactions()) t.excluded = true;
+  render();
+}
 
 /** The last 30 days, reaching back further when a loaded file starts earlier. */
 function recentSince() {
@@ -181,6 +210,8 @@ async function loadRecent() {
   const request = ++recentRequest;
   const planId = $("plan").value;
   const accountId = $("account").value;
+  seenImportIds = new Set();
+  updateExcludeSeen();
   if (!ynab || !accountId) {
     $("recent").hidden = true;
     return;
@@ -194,9 +225,9 @@ async function loadRecent() {
   }
 
   const recent = fromApiTransactions(transactions);
-  // Excluded rows are still in the file, so they are matched too.
-  const all = (conversion?.transactions ?? []).map(({ excluded, ...t }) => t);
-  const inFile = new Set(toApiTransactions(all, accountId).map((t) => t.import_id));
+  seenImportIds = new Set(recent.map((t) => t.importId).filter(Boolean));
+  updateExcludeSeen();
+  const inFile = new Set(fileImportIds());
   const fromFile = recent.filter((t) => inFile.has(t.importId)).length;
   const account = $("account").selectedOptions[0].textContent;
   const parts = [`${recent.length} transactions in ${account} since ${since}`];
@@ -336,6 +367,7 @@ function updateSelection() {
   all.checked = excluded === 0;
   all.indeterminate = excluded > 0 && excluded < transactions.length;
   $("download").disabled = excluded === transactions.length;
+  updateExcludeSeen();
   updateImportButton();
 }
 
@@ -415,6 +447,7 @@ $("recent").addEventListener("toggle", () => save(localStorage, KEYS.showRecent,
 $("import").addEventListener("click", importTransactions);
 $("download").addEventListener("click", download);
 $("clear").addEventListener("click", clear);
+$("exclude-seen").addEventListener("click", excludeSeen);
 $("show-source").checked = Boolean(load(localStorage, KEYS.showSource));
 $("show-source").addEventListener("change", () => {
   save(localStorage, KEYS.showSource, $("show-source").checked);

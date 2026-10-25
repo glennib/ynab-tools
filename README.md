@@ -11,7 +11,8 @@ Everything runs in the browser: the file is parsed locally and sent only to the 
 3. Pick a plan and account and import. Transactions arrive cleared and unapproved, ready for review in YNAB.
    The account's recent transactions in YNAB are listed below the account picker whenever YNAB is connected,
    with or without a file. They cover the last 30 days, or back to the file's first transaction if that is earlier.
-   Transactions whose `import_id` matches a row in the file are marked "in this file".
+   Transactions whose `import_id` matches a row in the file are marked "in this file",
+   and "Exclude N already in YNAB" unticks those rows in the preview.
 
 Without connecting, the converted file can be downloaded as a CSV for
 [YNAB's file-based import](https://support.ynab.com/en_us/file-based-import-a-guide-Bkj4Sszyo.md) instead.

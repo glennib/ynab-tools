@@ -1,11 +1,10 @@
 [tools]
 node = "24"
-"npm:serve" = "14"
 
 [tasks.test]
 description = "Run the unit tests"
 run = "node --test"
 
 [tasks.serve]
-description = "Serve the app locally (ES modules don't load over file://)"
-run = "serve ."
+description = "Serve the app locally, with the OAuth client ID from YNAB_CLIENT_ID"
+run = "node dev-server.js"

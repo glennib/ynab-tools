@@ -28,7 +28,7 @@ Without connecting, the converted file can be downloaded as a CSV for
 The app uses OAuth's implicit grant, so it needs an OAuth application registered under
 [YNAB developer settings](https://app.ynab.com/settings/developer), but no client secret.
 List every URL the app is served from (including `http://localhost:3000/` for development) as a redirect URI.
-For development, put the client ID in `config.js`; the container image takes it from an environment variable.
+The app reads the client ID from the `YNAB_CLIENT_ID` environment variable, both in the container and in development.
 
 ## Container image
 
@@ -53,5 +53,5 @@ Tools are managed with [mise](https://mise.jdx.dev/).
 
 ```sh
 mise run test   # unit tests
-mise run serve  # serve locally; ES modules don't load over file://
+YNAB_CLIENT_ID=<client id> mise run serve  # http://localhost:3000/
 ```

@@ -10,11 +10,17 @@ const PORT = Number(process.env.PORT) || 3000;
 const CLIENT_ID = process.env.YNAB_CLIENT_ID ?? "";
 
 // The files the page loads; the same set the Dockerfile copies into the image.
-const FILES = new Set(["/index.html", "/app.js", "/convert.js", "/ynab.js", "/style.css"]);
+const FILES = new Set([
+  "/index.html", "/app.js", "/convert.js", "/ynab.js", "/style.css",
+  "/favicon.svg", "/favicon.ico", "/apple-touch-icon.png",
+]);
 const TYPES = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
   ".css": "text/css; charset=utf-8",
+  ".svg": "image/svg+xml",
+  ".ico": "image/x-icon",
+  ".png": "image/png",
 };
 const HEADERS = {
   "Content-Security-Policy":

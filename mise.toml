@@ -5,6 +5,18 @@ node = "24"
 description = "Run the unit tests"
 run = "node --test"
 
+[tasks.icons]
+description = "Render favicon.ico and apple-touch-icon.png from favicon.svg (needs rsvg-convert and ImageMagick)"
+run = """
+set -eu
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+for s in 16 32 48; do rsvg-convert -w $s -h $s favicon.svg -o "$tmp/$s.png"; done
+magick "$tmp/16.png" "$tmp/32.png" "$tmp/48.png" favicon.ico
+# iOS rounds the corners itself and fills transparent ones with black, so this one is square.
+sed 's/ rx="7"//' favicon.svg | rsvg-convert -w 180 -h 180 -o apple-touch-icon.png
+"""
+
 [tasks.serve]
 description = "Serve the app locally, with the OAuth client ID from YNAB_CLIENT_ID"
 run = "node dev-server.js"

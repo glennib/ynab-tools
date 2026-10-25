@@ -27,8 +27,25 @@ Without connecting, the converted file can be downloaded as a CSV for
 
 The app uses OAuth's implicit grant, so it needs an OAuth application registered under
 [YNAB developer settings](https://app.ynab.com/settings/developer), but no client secret.
-List every URL the app is served from (including `http://localhost:3000/` for development) as a redirect URI,
-and put the client ID in `config.js`.
+List every URL the app is served from (including `http://localhost:3000/` for development) as a redirect URI.
+For development, put the client ID in `config.js`; the container image takes it from an environment variable.
+
+## Container image
+
+CI tests every push and pull request and builds the image for `linux/amd64` and `linux/arm64`.
+Pushes to `main` publish `ghcr.io/glennib/handynab:latest` and `:sha-<commit>`, and `v*` tags publish
+`:<version>` and `:<major>.<minor>`.
+
+The image is nginx running as a non-root user on port 8080:
+
+- `YNAB_CLIENT_ID` sets the OAuth client ID, served to the page as `/config.js`.
+- `/healthz` answers `ok`, for liveness and readiness probes.
+- Responses carry a Content-Security-Policy that only allows the page's own scripts and requests to the YNAB API.
+
+```sh
+podman build -t handynab .
+podman run --rm -p 8080:8080 -e YNAB_CLIENT_ID=<client id> handynab
+```
 
 ## Development
 

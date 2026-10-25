@@ -1,0 +1,27 @@
+# Rendered by the nginx image's entrypoint, which substitutes defined environment
+# variables (here ${YNAB_CLIENT_ID}) and leaves nginx variables untouched.
+server {
+    listen 8080;
+    server_name _;
+    root /usr/share/nginx/html;
+    server_tokens off;
+
+    location = /config.js {
+        default_type text/javascript;
+        include /etc/nginx/snippets/headers.conf;
+        add_header Cache-Control "no-store" always;
+        return 200 'export const YNAB_CLIENT_ID = "${YNAB_CLIENT_ID}";\n';
+    }
+
+    location = /healthz {
+        access_log off;
+        default_type text/plain;
+        return 200 "ok\n";
+    }
+
+    location / {
+        include /etc/nginx/snippets/headers.conf;
+        add_header Cache-Control "no-cache" always;
+        try_files $uri $uri/ =404;
+    }
+}

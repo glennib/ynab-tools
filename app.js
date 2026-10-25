@@ -277,6 +277,16 @@ function download() {
   URL.revokeObjectURL(url);
 }
 
+function clear() {
+  conversion = null;
+  // Resetting the input lets the same file be chosen again.
+  input.value = "";
+  showError("");
+  $("result").hidden = true;
+  $("import-status").hidden = true;
+  updateImportButton();
+}
+
 // --- Wiring ---------------------------------------------------------------
 
 const drop = $("drop");
@@ -291,6 +301,7 @@ $("account").addEventListener("change", () => {
 });
 $("import").addEventListener("click", importTransactions);
 $("download").addEventListener("click", download);
+$("clear").addEventListener("click", clear);
 $("show-source").checked = Boolean(load(localStorage, KEYS.showSource));
 $("show-source").addEventListener("change", () => {
   save(localStorage, KEYS.showSource, $("show-source").checked);

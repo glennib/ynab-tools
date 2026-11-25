@@ -99,10 +99,12 @@ function squash(text) {
 
 /**
  * Converts parsed Handelsbanken rows to YNAB transactions.
- * Pending ("Reservert") rows are left out since they reappear once booked, and
- * would otherwise be imported twice; they are returned separately, dated by when
- * they were made. Rows without a booked date (summary lines) are returned as
- * their non-empty cells, and blank padding rows are dropped.
+ * Rows the bank has not booked yet ("Reservert", "Bekreftet": an executed date
+ * and an amount, but no booked date) are left out since they reappear once
+ * booked, with a booked date and payee that need not match, and would otherwise
+ * be imported twice; they are returned separately, dated by when they were made.
+ * Other rows without a booked date (summary lines) are returned as their
+ * non-empty cells, and blank padding rows are dropped.
  * Transactions keep the bank's own cells as `source`, matching `columns`, so
  * the preview can show what each one was converted from.
  */
@@ -129,11 +131,12 @@ export function convertRows(rows) {
       return { date, payee, memo, amount, source };
     };
     const amount = parseAmount(get("inflow")) ?? parseAmount(get("outflow"));
-    if (get("status") === "Reservert") {
-      pending.push(transaction(isoDate(get("executed")) ?? "", amount ?? 0));
+    const date = isoDate(get("booked"));
+    const executed = isoDate(get("executed"));
+    if (!date && executed && amount !== null) {
+      pending.push(transaction(executed, amount));
       continue;
     }
-    const date = isoDate(get("booked"));
     if (!date || amount === null) {
       const cells = row.map((cell) => cell.trim()).filter(Boolean);
       if (cells.length) ignored.push(cells.join(" · "));

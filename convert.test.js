@@ -8,6 +8,7 @@ const HEADER =
 const SAMPLE = [
   "﻿" + HEADER,
   "24.10.2026;;;KIWI 100 SENTRUM;Varekjøp;;1234 56 78901;Felleskonto;;;;-100.500;NOK;Reservert;KIWI 100 SENTRUM",
+  "24.10.2026;;23.10.2026;Lønn;Lønn;;;;1234 56 78901;;1000.250;;NOK;Bekreftet;Lønn",
   "23.10.2026;23.10.2026;23.10.2026;Vipps*KAFE;Varekjøp;Varekjøp debetkort;1234 56 78901;Ola Nordmann;;;;-33;NOK;Bokført;*1111 22.10 NOK 33.00 Vipps*KAFE Kurs: 1.0000",
   "23.10.2026;23.10.2026;23.10.2026;22.10 KIWI 100 SENTRUM STORGATA OSLO;Varekjøp;Varekjøp debetkort;1234 56 78901;Ola Nordmann;;;;-79.8;NOK;Bokført;22.10 KIWI 100 SENTRUM STORGATA OSLO",
   "23.10.2026;23.10.2026;23.10.2026;Lønn fra EKSEMPEL AS;Lønn;Lønn;1111 22 33333;;1234 56 78901;Ola Nordmann;50000.17;;NOK;Bokført;Fra: EKSEMPEL AS",
@@ -24,7 +25,7 @@ const SAMPLE = [
 
 const bytes = (s) => new TextEncoder().encode(s);
 
-test("converts booked transactions and skips pending and summary rows", () => {
+test("converts booked transactions and skips unbooked and summary rows", () => {
   const { columns, transactions: converted, pending: pendingRows, ignored } = convert(bytes(SAMPLE));
   const withoutSource = (rows) => rows.map(({ source, ...t }) => t);
   const transactions = withoutSource(converted);
@@ -33,6 +34,7 @@ test("converts booked transactions and skips pending and summary rows", () => {
   assert.equal(converted[0].source[columns.indexOf("Status")], "Bokført");
   assert.deepEqual(pending, [
     { date: "2026-10-24", payee: "KIWI 100 SENTRUM", memo: "KIWI 100 SENTRUM", amount: -100.5 },
+    { date: "2026-10-24", payee: "Lønn", memo: "Lønn", amount: 1000.25 },
   ]);
   assert.deepEqual(ignored, [
     "Total beløp inn på konto: · 50 713,83 NOK",

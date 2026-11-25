@@ -369,7 +369,7 @@ function updateSelection() {
   const excluded = transactions.filter((t) => t.excluded).length;
   const parts = [transactionCount(transactions.length)];
   if (excluded) parts.push(`${excluded} utelatt`);
-  if (pending.length) parts.push(`${pending.length} reservert, hoppet over`);
+  if (pending.length) parts.push(`${pending.length} ikke bokført ennå, hoppet over`);
   if (ignored.length) parts.push(`${ignored.length} andre rader hoppet over`);
   $("counts").textContent = parts.join(" · ");
 
@@ -390,7 +390,7 @@ function render() {
   $("rows").replaceChildren(...transactionRows(transactions, columns, showSource, true));
 
   $("pending").hidden = !pending.length;
-  $("pending").querySelector("summary").textContent = `${pending.length} reservert, hoppet over`;
+  $("pending").querySelector("summary").textContent = `${pending.length} ikke bokført ennå, hoppet over`;
   $("pending-head").replaceChildren(headerRow(columns, showSource));
   $("pending-rows").replaceChildren(...transactionRows(pending, columns, showSource));
 

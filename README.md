@@ -22,7 +22,7 @@ Without connecting, the converted file can be downloaded as a CSV for
 ## Conversion
 
 - The date is the booking date (`Bokført dato`).
-- Pending rows (`Reservert`) are skipped; they are imported once booked.
+- Rows the bank hasn't booked yet (`Reservert`, `Bekreftet`: no `Bokført dato`) are skipped; they are imported once booked.
   The preview lists them, and any other skipped rows (totals, balances), below the transactions.
   "Vis bankens kolonner" adds the export's own columns next to the converted ones.
 - Payee is the counterparty name when the bank provides one, otherwise a cleaned-up `Beskrivelse`.
